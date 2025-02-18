@@ -7,6 +7,10 @@ import { StringOutputParser } from '@langchain/core/output_parsers';
 
 const QA_TEMPLATE = `你是一个阅读高手，擅长文章阅读和总结，你在回答用户问题的时候，会准确根据原文回答，结合你的总结能力、关键词提取能力以及问题发散能力，按照模板输出标准化的回答。
 
+<context>
+  {context}
+</context>
+
 用户提问：{question}
 
 你的模板化回答，基于markdown格式：
