@@ -1,18 +1,21 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
-import styles from '@/styles/Home.module.css';
-import Image from 'next/image';
-import ReactMarkdown from 'react-markdown';
 import LoadingDots from '@/components/LoadingDots';
-import { Document } from 'langchain/document';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger
 } from '@/components/ui/accordion';
-import Layout from '@/components/layout';
+import { Card, CardFooter } from '@/components/ui/card';
+import styles from '@/styles/Home.module.css';
+import { Document } from 'langchain/document';
+import { useEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+
+import { Button } from '@/components/ui/button';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 
 export type Message = {
   type: 'apiMessage' | 'userMessage';
@@ -33,6 +36,11 @@ export default function Home() {
   }>({
     messages: [
       {
+        message:
+          'aaaaa Halalalalalaalli, what would you like to learn about this document?',
+        type: 'userMessage'
+      },
+      {
         message: 'Hi, what would you like to learn about this document?',
         type: 'apiMessage'
       }
@@ -40,7 +48,7 @@ export default function Home() {
     history: []
   });
 
-  const { messages, history } = messageState;
+  const { messages } = messageState;
 
   const messageListRef = useRef<HTMLDivElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -120,62 +128,35 @@ export default function Home() {
 
   //prevent empty submissions
   const handleEnter = (e: any) => {
-    if (e.key === 'Enter' && query) {
-      handleSubmit(e);
-    } else if (e.key == 'Enter') {
+    if (e.key === 'Enter' && e.shiftKey) {
+      handleSubmit(encodeURI);
+    } else if (e.key === 'Enter' && query) {
+      e.preventDefault();
+    } else if (e.key === 'Enter') {
       e.preventDefault();
     }
   };
 
   return (
-    <>
-      <Layout>
-        <div className="mx-auto flex flex-col gap-4">
-          <h1 className="text-2xl font-bold leading-[1.1] tracking-tighter text-center">
-            Chat With Your Docs
-          </h1>
-          <main className={styles.main}>
-            <div className={styles.cloud}>
-              <div ref={messageListRef} className={styles.messagelist}>
-                {messages.map((message, index) => {
-                  let icon;
-                  let className;
-                  if (message.type === 'apiMessage') {
-                    icon = (
-                      <Image
-                        key={index}
-                        src="/robot.png"
-                        alt="AI"
-                        width="40"
-                        height="40"
-                        className={styles.boticon}
-                        priority
-                      />
-                    );
-                    className = styles.apimessage;
-                  } else {
-                    icon = (
-                      <Image
-                        key={index}
-                        src="/me.png"
-                        alt="Me"
-                        width="30"
-                        height="30"
-                        className={styles.usericon}
-                        priority
-                      />
-                    );
-                    // The latest message sent by the user will be animated while waiting for a response
-                    className =
-                      loading && index === messages.length - 1
-                        ? styles.usermessagewaiting
-                        : styles.usermessage;
-                  }
-                  return (
-                    <>
-                      <div key={`chatMessage-${index}`} className={className}>
-                        {icon}
-                        <div className={styles.markdownanswer}>
+    <div className="flex justify-center w-full px-60 pt-8 h-full">
+      <Card className="w-full h-full">
+        <CardHeader>
+          <CardTitle>Chat</CardTitle>
+        </CardHeader>
+
+        <CardContent>
+          <div className="flex-1">
+            <div className="">
+              {messages.map((message, index) => {
+                return (
+                  <>
+                    <div
+                      className="flex flex-col space-y-4"
+                      ref={messageListRef}
+                    >
+                      {/* loading && index === messages.length - 1 */}
+                      {message.type === 'userMessage' ? (
+                        <div className="bg-gray-100 text-gray-800 p-4 rounded-lg shadow-md max-w-md self-end">
                           <ReactMarkdown
                             components={{
                               a: ({ ...props }) => (
@@ -190,109 +171,107 @@ export default function Home() {
                             {message.message}
                           </ReactMarkdown>
                         </div>
-                      </div>
-                      {message.sourceDocs && (
-                        <div
-                          className="p-5"
-                          key={`sourceDocsAccordion-${index}`}
-                        >
-                          <Accordion
-                            type="single"
-                            collapsible
-                            className="flex-col"
+                      ) : (
+                        <div className="my-6">
+                          <ReactMarkdown
+                            components={{
+                              a: ({ ...props }) => (
+                                <a
+                                  {...props}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                />
+                              )
+                            }}
                           >
-                            {message.sourceDocs.map((doc, index) => (
-                              <div key={`messageSourceDocs-${index}`}>
-                                <AccordionItem value={`item-${index}`}>
-                                  <AccordionTrigger>
-                                    <h3>Source {index + 1}</h3>
-                                  </AccordionTrigger>
-                                  <AccordionContent>
-                                    <ReactMarkdown
-                                      components={{
-                                        a: ({ ...props }) => (
-                                          <a
-                                            {...props}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                          />
-                                        )
-                                      }}
-                                    >
-                                      {doc.pageContent}
-                                    </ReactMarkdown>
-                                    <p className="mt-2">
-                                      <b>Source:</b> {doc.metadata.source}
-                                    </p>
-                                  </AccordionContent>
-                                </AccordionItem>
-                              </div>
-                            ))}
-                          </Accordion>
+                            {message.message}
+                          </ReactMarkdown>
+                          {message.sourceDocs && (
+                            <div key={`sourceDocsAccordion-${index}`}>
+                              <Accordion
+                                type="single"
+                                collapsible
+                                className="flex-col"
+                              >
+                                {message.sourceDocs.map((doc, index) => (
+                                  <div key={`messageSourceDocs-${index}`}>
+                                    <AccordionItem value={`item-${index}`}>
+                                      <AccordionTrigger>
+                                        <h3>Source {index + 1}</h3>
+                                      </AccordionTrigger>
+                                      <AccordionContent>
+                                        <ReactMarkdown
+                                          components={{
+                                            a: ({ ...props }) => (
+                                              <a
+                                                {...props}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                              />
+                                            )
+                                          }}
+                                        >
+                                          {doc.pageContent}
+                                        </ReactMarkdown>
+                                        <p className="mt-2">
+                                          <b>Source:</b> {doc.metadata.source}
+                                        </p>
+                                      </AccordionContent>
+                                    </AccordionItem>
+                                  </div>
+                                ))}
+                              </Accordion>
+                            </div>
+                          )}
                         </div>
                       )}
-                    </>
-                  );
-                })}
-              </div>
+                    </div>
+                  </>
+                );
+              })}
             </div>
-            <div className={styles.center}>
-              <div className={styles.cloudform}>
-                <form onSubmit={handleSubmit}>
-                  <textarea
-                    disabled={loading}
-                    onKeyDown={handleEnter}
-                    ref={textAreaRef}
-                    autoFocus={false}
-                    rows={1}
-                    maxLength={512}
-                    id="userInput"
-                    name="userInput"
-                    placeholder={
-                      loading
-                        ? 'Waiting for response...'
-                        : 'What is this legal case about?'
-                    }
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    className={styles.textarea}
-                  />
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className={styles.generatebutton}
-                  >
-                    {loading ? (
-                      <div className={styles.loadingwheel}>
-                        <LoadingDots color="#000" />
-                      </div>
-                    ) : (
-                      // Send icon SVG in input field
-                      <svg
-                        viewBox="0 0 20 20"
-                        className={styles.svgicon}
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path>
-                      </svg>
-                    )}
-                  </button>
-                </form>
-              </div>
-            </div>
-            {error && (
-              <div className="border border-red-400 rounded-md p-4">
-                <p className="text-red-500">{error}</p>
-              </div>
+          </div>
+        </CardContent>
+        <CardFooter className="flex items-center mt-2 w-full">
+          <div className="flex items-center mt-2 w-full">
+            <Textarea
+              className="align-middle"
+              ref={textAreaRef}
+              placeholder={
+                loading ? 'Waiting for response...' : '这篇文章主要讲什么'
+              }
+              disabled={loading}
+              onKeyDown={handleEnter}
+              autoFocus={false}
+              rows={1}
+              maxLength={512}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            {loading ? (
+              <Button className="ml-2" variant="secondary">
+                <LoadingDots color="#000" />
+              </Button>
+            ) : (
+              // Send icon SVG in input field
+              <Button className="ml-2" onClick={handleSubmit}>
+                <svg
+                  viewBox="0 0 20 20"
+                  className={styles.svgicon}
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path>
+                </svg>
+              </Button>
             )}
-          </main>
-        </div>
-        <footer className="m-auto p-4">
-          <a href="https://twitter.com/mayowaoshin">
-            Powered by LangChainAI. Demo built by Mayo (Twitter: @mayowaoshin).
-          </a>
-        </footer>
-      </Layout>
-    </>
+          </div>
+          {error && (
+            <div className="border border-red-400 rounded-md p-4">
+              <p className="text-red-500">{error}</p>
+            </div>
+          )}
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
